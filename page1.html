@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page 1 - DartVador</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        #playerDropdown {
+            display: none;
+            list-style-type: none;
+            margin: 10px 0;
+            padding: 0;
+            border: 1px solid #ccc;
+        }
+
+        #playerDropdown li {
+            padding: 10px;
+            border: 1px solid #ccc;
+            margin: 5px 0;
+            text-align: center;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            width: 150px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        #playerDropdown li:hover {
+            background-color: #e0e0e0;
+        }
+
+        #selectedPlayers div {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        #selectedPlayers span {
+            flex-grow: 1;
+        }
+
+        #selectedPlayers button {
+            margin-left: auto;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f44336;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        #matchTable {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        #matchTable th, #matchTable td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+            word-wrap: break-word;
+            height: 50px; /* Uniform row height */
+        }
+
+        #matchTable th {
+            background-color: #f9f9f9;
+        }
+
+        #matchTable tr:nth-child(2) td {
+            background-color: #dcdcdc;
+        }
+
+        .input-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 1000;
+        }
+
+        .input-popup input {
+            width: 100px;
+            padding: 5px;
+            margin-right: 10px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="page1.html"><button>Page 1</button></a>
+            <a href="page2.html"><button>Page 2</button></a>
+            <button onclick="navigateTo('page3')">Page 3</button>
+        </nav>
+    </header>
+
+    <main>
+        <div style="display: flex;">
+            <section style="flex: 1; padding: 20px; border-right: 1px solid #ccc;">
+                <h2>Setup</h2>
+                <button id="addPlayerButton" onclick="toggleDropdown()">Add Player</button>
+                <ul id="playerDropdown">
+                    <li onclick="selectPlayer('200A')">200A</li>
+                    <li onclick="selectPlayer('Bus')">Bus</li>
+                    <li onclick="selectPlayer('Chistera')">Chistera</li>
+                    <li onclick="selectPlayer('LA')">LA</li>
+                    <li onclick="selectPlayer('Pasta Lover')">Pasta Lover</li>
+                    <li onclick="selectPlayer('RoRo')">RoRo</li>
+                    <li onclick="selectPlayer('Solid Rodriguez')">Solid Rodriguez</li>
+                    <li onclick="selectPlayer('∅')">∅</li>
+                </ul>
+                <div id="selectedPlayers" style="margin-top: 10px;">
+                    <!-- Selected players will be displayed here -->
+                </div>
+                <button id="startMatchButton" style="margin-top: 20px;" onclick="startMatch()">Start Match</button>
+            </section>
+            <section style="flex: 2; padding: 20px;">
+                <h2>Match Progression</h2>
+                <div id="matchSection">
+                    <!-- Match table will appear here -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="input-popup" id="inputPopup">
+        <label for="scoreInput">Enter Score:</label>
+        <input type="number" id="scoreInput">
+        <button onclick="submitScore()">Submit</button>
+        <button onclick="closePopup()">Cancel</button>
+    </div>
+
+    <script>
+        let currentCell = null;
+        let isSecondRow = false;
+
+        function toggleDropdown() {
+            const dropdown = document.getElementById("playerDropdown");
+            dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+        }
+
+        function selectPlayer(playerName) {
+            const selectedPlayers = document.getElementById("selectedPlayers");
+            if (Array.from(selectedPlayers.children).some(player => player.textContent.includes(playerName))) {
+                alert(`${playerName} is already added.`);
+                return;
+            }
+
+            const playerEntry = document.createElement("div");
+
+            const playerNameSpan = document.createElement("span");
+            playerNameSpan.textContent = playerName;
+
+            const removeButton = document.createElement("button");
+            removeButton.textContent = "x";
+            removeButton.onclick = () => {
+                selectedPlayers.removeChild(playerEntry);
+            };
+
+            playerEntry.appendChild(playerNameSpan);
+            playerEntry.appendChild(removeButton);
+            selectedPlayers.appendChild(playerEntry);
+
+            document.getElementById("playerDropdown").style.display = "none";
+        }
+
+        function startMatch() {
+            const selectedPlayers = Array.from(document.getElementById("selectedPlayers").children).map(player => player.querySelector("span").textContent);
+
+            if (selectedPlayers.length === 0) {
+                alert("Please add players before starting the match.");
+                return;
+            }
+
+            const matchSection = document.getElementById("matchSection");
+            matchSection.innerHTML = ""; // Clear any existing content
+
+            const table = document.createElement("table");
+            table.id = "matchTable";
+
+            // Header row with player names
+            const headerRow = document.createElement("tr");
+            selectedPlayers.forEach(player => {
+                const th = document.createElement("th");
+                th.textContent = player;
+                headerRow.appendChild(th);
+            });
+            table.appendChild(headerRow);
+
+            // Second row with starting score (301)
+            const scoreRow = document.createElement("tr");
+            selectedPlayers.forEach(() => {
+                const td = document.createElement("td");
+                td.textContent = "301";
+                td.onclick = () => openPopup(td, true);
+                scoreRow.appendChild(td);
+            });
+            table.appendChild(scoreRow);
+
+            // Empty third row
+            const emptyRow = document.createElement("tr");
+            selectedPlayers.forEach(() => {
+                const td = document.createElement("td");
+                td.onclick = () => openPopup(td, false);
+                emptyRow.appendChild(td);
+            });
+            table.appendChild(emptyRow);
+
+            matchSection.appendChild(table);
+
+            // Add a "+" button below the table
+            const addButton = document.createElement("button");
+            addButton.textContent = "+";
+            addButton.style.marginTop = "10px";
+            addButton.onclick = addRow;
+            matchSection.appendChild(addButton);
+        }
+
+        function openPopup(cell, secondRow = false) {
+            currentCell = cell;
+            isSecondRow = secondRow;
+            document.getElementById("overlay").style.display = "block";
+            document.getElementById("inputPopup").style.display = "block";
+        }
+
+        function closePopup() {
+            document.getElementById("overlay").style.display = "none";
+            document.getElementById("inputPopup").style.display = "none";
+        }
+
+        function submitScore() {
+            const scoreInput = document.getElementById("scoreInput");
+            const newScore = parseInt(scoreInput.value, 10);
+            if (isNaN(newScore)) {
+                alert("Please enter a valid number.");
+                return;
+            }
+
+            if (isSecondRow) {
+                currentCell.textContent = newScore;
+            } else {
+                const previousRow = currentCell.parentElement.previousElementSibling;
+                if (previousRow) {
+                    const previousScore = parseInt(previousRow.children[currentCell.cellIndex].textContent, 10) || 0;
+                    currentCell.textContent = previousScore - newScore;
+                } else {
+                    currentCell.textContent = newScore;
+                }
+            }
+
+            closePopup();
+        }
+
+        function addRow() {
+            const table = document.getElementById("matchTable");
+            const newRow = document.createElement("tr");
+
+            Array.from(table.rows[0].cells).forEach(() => {
+                const td = document.createElement("td");
+                td.onclick = () => openPopup(td);
+                newRow.appendChild(td);
+            });
+
+            table.appendChild(newRow);
+        }
+    </script>
+</body>
+</html>
